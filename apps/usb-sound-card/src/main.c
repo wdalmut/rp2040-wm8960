@@ -415,13 +415,32 @@ static struct audio_control_cmd {
 } audio_control_cmd_t;
 
 static void _audio_reconfigure() {
+    bool status = false; 
+
     switch (audio_state.freq) {
-        case 44100:
         case 48000:
+            status = mtb_wm8960_configure_clocking(
+                512 * 24000,
+                true,
+                WM8960_ADC_DAC_SAMPLE_RATE_48_KHZ,
+                WM8960_AUDIO_INTF0_WL_16BITS,
+                WM8960_AUDIO_INTF0_FORMAT_I2S_MODE);
             break;
+        case 44100:
         default:
+            status = mtb_wm8960_configure_clocking(
+                512 * 24000,
+                true,
+                WM8960_ADC_DAC_SAMPLE_RATE_44_1_KHZ,
+                WM8960_AUDIO_INTF0_WL_16BITS,
+                WM8960_AUDIO_INTF0_FORMAT_I2S_MODE);
             audio_state.freq = 44100;
     }
+
+    if (!status) {
+        panic("PicoAudio: Unable to configure audio clocking.\n");
+    }
+
     // todo hack overwriting const
     ((struct audio_format *) producer_pool->format)->sample_freq = audio_state.freq;
 }
